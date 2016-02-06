@@ -1,0 +1,54 @@
+# !/bin/bash
+#This script is written to consolidate steps for spinning up ec2 instances for puppet master installation
+
+###Assumptions
+#AWS Secret Access Key and Access Key ID are propertly place and AWS CLI is configured properly on the machine this script would be launched from
+
+###Variables
+KEY_PAIR_NAME=puppetMasterKeyPair
+echo "KEY_PAIR_NAME=$KEY_PAIR_NAME"
+
+GROUP_NAME=puppet-master-sg
+echo "GROUP_NAME=$GROUP_NAME"
+
+#Red Hat Enterprise Linux 7.2 (HVM), SSD Volume Type - ami-775e4f16
+IMAGE_ID=ami-775e4f16
+echo "IMAGE_ID=$IMAGE_ID"
+
+#t2.medium 2vCPU & 4 GB RAM
+INSTANCE_TYPE=t2.medium
+echo "INSTANCE_TYPE=$INSTANCE_TYPE"
+
+echo "Generating a Key Pair for puppet master ec2 instance"
+aws ec2 create-key-pair --key-name $KEY_PAIR_NAME --query 'KeyMaterial' --output text > $KEY_PAIR_NAME.pem
+
+echo "Secure Key Pair by changing file permissions"
+chmod 400 $KEY_PAIR_NAME.pem
+
+echo "Create a security Group for puppet master ec2 instance"
+aws ec2 create-security-group --group-name $GROUP_NAME --description "Security Group for Puppet master ec2 instance"
+
+#Open required ports
+
+echo "Getting GROUP_ID"
+GROUP_ID=$(aws ec2 describe-security-groups --group-name $GROUP_NAME --query "SecurityGroups[0].GroupId")
+echo "GROUP_ID=$GROUP_ID"
+
+echo "Opening inbound port 8140"
+aws ec2 authorize-security-group-ingress --group-name $GROUP_NAME --protocol tcp --port 8140 --cidr 0.0.0.0/0
+
+echo "Opening inbound port 443"
+aws ec2 authorize-security-group-ingress --group-name $GROUP_NAME --protocol tcp --port 443 --cidr 0.0.0.0/0
+
+echo "Opening inbound port 61613"
+aws ec2 authorize-security-group-ingress --group-name $GROUP_NAME --protocol tcp --port 61613 --cidr 0.0.0.0/0
+
+echo "opening inbound port 80"
+aws ec2 authorize-security-group-ingress --group-name $GROUP_NAME --protocol tcp --port 80 --cidr 0.0.0.0/0
+
+echo "opening inbound port 8080"
+aws ec2 authorize-security-group-ingress --group-name $GROUP_NAME --protocol tcp --port 8080 --cidr 0.0.0.0/0
+
+
+#Spin up ec2 instance for puppet master
+aws ec2 run-instances --image-id $IMAGE_ID --count 1 --instance-type $INSTANCE_TYPE --key-name $KEY_PAIR_NAME --security_group-ids $GROUP_ID
