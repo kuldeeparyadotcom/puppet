@@ -51,4 +51,4 @@ aws ec2 authorize-security-group-ingress --group-name $GROUP_NAME --protocol tcp
 
 
 #Spin up ec2 instance for puppet master
-#aws ec2 run-instances --image-id $IMAGE_ID --count 1 --instance-type $INSTANCE_TYPE --key-name $KEY_PAIR_NAME --security_group-ids $GROUP_ID
+aws ec2 run-instances --image-id $IMAGE_ID --count 1 --instance-type $INSTANCE_TYPE --key-name $KEY_PAIR_NAME --security-groups $GROUP_NAME
